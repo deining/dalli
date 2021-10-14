@@ -85,6 +85,5 @@ describe "Sasl" do
         assert_equal 38, results.values.first.size
       end
     end
-
   end
 end

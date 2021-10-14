@@ -40,6 +40,7 @@ module MemcachedMock
     #
     def memcached_mock(prc, meth = :start, meth_args = [])
       return unless supports_fork?
+
       begin
         pid = fork {
           trap("TERM") { exit }
@@ -67,14 +68,11 @@ module MemcachedMock
 
     def find_memcached
       output = `memcached -h | head -1`.strip
-      if output && output =~ /^memcached (\d.\d.\d+)/ && $1 > "1.4"
-        return (puts "Found #{output} in PATH"; "")
-      end
+      return (puts "Found #{output} in PATH"; "") if output && output =~ /^memcached (\d.\d.\d+)/ && $1 > "1.4"
+
       PATHS.each do |path|
         output = `memcached -h | head -1`.strip
-        if output && output =~ /^memcached (\d\.\d\.\d+)/ && $1 > "1.4"
-          return (puts "Found #{output} in #{path}"; path)
-        end
+        return (puts "Found #{output} in #{path}"; path) if output && output =~ /^memcached (\d\.\d\.\d+)/ && $1 > "1.4"
       end
 
       raise Errno::ENOENT, "Unable to find memcached 1.4+ locally"
@@ -86,7 +84,7 @@ module MemcachedMock
     end
 
     def sasl_credentials
-      {username: "testuser", password: "testtest"}
+      { username: "testuser", password: "testtest" }
     end
 
     def sasl_env
@@ -110,7 +108,7 @@ module MemcachedMock
       ssl_context.verify_hostname = true if ssl_context.respond_to?(:verify_hostname)
       ssl_context.verify_mode = OpenSSL::SSL::VERIFY_PEER
 
-      dc = start_and_flush_with_retry(port, "-Z -o ssl_chain_cert=/tmp/memcached.crt -o ssl_key=/tmp/memcached.key", {:ssl_context => ssl_context})
+      dc = start_and_flush_with_retry(port, "-Z -o ssl_chain_cert=/tmp/memcached.crt -o ssl_key=/tmp/memcached.key", { ssl_context: ssl_context })
       yield dc, port if block_given?
     end
 
@@ -130,9 +128,9 @@ module MemcachedMock
       ef = OpenSSL::X509::ExtensionFactory.new
       ef.subject_certificate = root_cert
       ef.issuer_certificate = root_cert
-      root_cert.add_extension(ef.create_extension("basicConstraints","CA:TRUE",true))
-      root_cert.add_extension(ef.create_extension("keyUsage","keyCertSign, cRLSign", true))
-      root_cert.add_extension(ef.create_extension("subjectKeyIdentifier","hash",false))
+      root_cert.add_extension(ef.create_extension("basicConstraints", "CA:TRUE", true))
+      root_cert.add_extension(ef.create_extension("keyUsage", "keyCertSign, cRLSign", true))
+      root_cert.add_extension(ef.create_extension("subjectKeyIdentifier", "hash", false))
       root_cert.sign(root_key, OpenSSL::Digest::SHA256.new)
       File.write("/tmp/root.key", root_key)
       File.write("/tmp/root.crt", root_cert)
@@ -150,8 +148,8 @@ module MemcachedMock
       ef.subject_certificate = cert
       ef.issuer_certificate = root_cert
       cert.add_extension(ef.create_extension("subjectAltName", "DNS:localhost,IP:127.0.0.1", false))
-      cert.add_extension(ef.create_extension("keyUsage","digitalSignature", true))
-      cert.add_extension(ef.create_extension("subjectKeyIdentifier","hash",false))
+      cert.add_extension(ef.create_extension("keyUsage", "digitalSignature", true))
+      cert.add_extension(ef.create_extension("subjectKeyIdentifier", "hash", false))
       cert.sign(root_key, OpenSSL::Digest::SHA256.new)
 
       File.write("/tmp/memcached.key", key)
@@ -176,11 +174,11 @@ module MemcachedMock
     def start_and_flush(port, args = "", client_options = {}, flush = true)
       memcached_server(port, args)
       dc = if port.to_i == 0
-        # unix socket
-        Dalli::Client.new(port, client_options)
-      else
-        Dalli::Client.new(["localhost:#{port}", "127.0.0.1:#{port}"], client_options)
-      end
+             # unix socket
+             Dalli::Client.new(port, client_options)
+           else
+             Dalli::Client.new(["localhost:#{port}", "127.0.0.1:#{port}"], client_options)
+           end
       dc.flush_all if flush
       dc
     end

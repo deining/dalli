@@ -9,7 +9,7 @@ describe "failover" do
     describe "timeouts" do
       it "not lead to corrupt sockets" do
         memcached_persistent do |dc|
-          value = {test: "123"}
+          value = { test: "123" }
           begin
             Timeout.timeout 0.01 do
               start_time = Time.now
@@ -78,12 +78,12 @@ describe "failover" do
           dc = Dalli::Client.new ["localhost:#{first_port}", "localhost:#{second_port}"]
           dc.set "a", "a1"
           result = dc.get_multi ["a"]
-          assert_equal result, {"a" => "a1"}
+          assert_equal result, { "a" => "a1" }
 
           memcached_kill(first_port)
 
           result = dc.get_multi ["a"]
-          assert_equal result, {"a" => "a1"}
+          assert_equal result, { "a" => "a1" }
         end
       end
     end
@@ -97,14 +97,14 @@ describe "failover" do
           dc.set "foo", "foo1"
           dc.set "bar", "bar1"
           result = dc.get_multi ["foo", "bar"]
-          assert_equal result, {"foo" => "foo1", "bar" => "bar1"}
+          assert_equal result, { "foo" => "foo1", "bar" => "bar1" }
 
           memcached_kill(first_port)
 
           dc.set "foo", "foo1"
           dc.set "bar", "bar1"
           result = dc.get_multi ["foo", "bar"]
-          assert_equal result, {"foo" => "foo1", "bar" => "bar1"}
+          assert_equal result, { "foo" => "foo1", "bar" => "bar1" }
 
           memcached_kill(second_port)
 

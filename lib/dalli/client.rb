@@ -71,6 +71,7 @@ module Dalli
       keys.compact!
 
       return {} if keys.empty?
+
       if block_given?
         get_multi_yielder(keys) { |k, data| yield k, data.first }
       else
@@ -80,7 +81,7 @@ module Dalli
       end
     end
 
-    CACHE_NILS = {cache_nils: true}.freeze
+    CACHE_NILS = { cache_nils: true }.freeze
 
     # Fetch the value associated with the key.
     # If a value is found, then it is returned.
@@ -185,6 +186,7 @@ module Dalli
     # #cas.
     def incr(key, amt = 1, ttl = nil, default = nil)
       raise ArgumentError, "Positive values only: #{amt}" if amt < 0
+
       perform(:incr, key, amt.to_i, ttl_or_default(ttl), default)
     end
 
@@ -204,6 +206,7 @@ module Dalli
     # #cas.
     def decr(key, amt = 1, ttl = nil, default = nil)
       raise ArgumentError, "Positive values only: #{amt}" if amt < 0
+
       perform(:decr, key, amt.to_i, ttl_or_default(ttl), default)
     end
 
@@ -335,6 +338,7 @@ module Dalli
       (value, cas) = perform(:cas, key)
       value = !value || value == "Not found" ? nil : value
       return if value.nil? && !always_set
+
       newvalue = yield(value)
       perform(:set, key, newvalue, ttl_or_default(ttl), cas, options)
     end
@@ -375,6 +379,7 @@ module Dalli
     def perform_multi_response_start(servers)
       servers.each do |server|
         next unless server.alive?
+
         begin
           server.multi_response_start
         rescue DalliError, NetworkError => e
@@ -428,6 +433,7 @@ module Dalli
     # Chokepoint method for instrumentation
     def perform(*all_args)
       return yield if block_given?
+
       op, key, *args = all_args
 
       key = key.to_s
@@ -443,7 +449,8 @@ module Dalli
     end
 
     def validate_key(key)
-      raise ArgumentError, "key cannot be blank" if !key || key.length == 0
+      raise ArgumentError, "key cannot be blank" if !key || key.length.zero?
+
       key = key_with_namespace(key)
       if key.length > 250
         digest_class = @options[:digest_class] || ::Digest::MD5
@@ -463,6 +470,7 @@ module Dalli
 
     def namespace
       return nil unless @options[:namespace]
+
       @options[:namespace].is_a?(Proc) ? @options[:namespace].call.to_s : @options[:namespace].to_s
     end
 
@@ -476,9 +484,8 @@ module Dalli
       rescue NoMethodError
         raise ArgumentError, "cannot convert :expires_in => #{opts[:expires_in].inspect} to an integer"
       end
-      if opts[:digest_class] && !opts[:digest_class].respond_to?(:hexdigest)
-        raise ArgumentError, "The digest_class object must respond to the hexdigest method"
-      end
+      raise ArgumentError, "The digest_class object must respond to the hexdigest method" if opts[:digest_class] && !opts[:digest_class].respond_to?(:hexdigest)
+
       opts
     end
 
@@ -487,6 +494,7 @@ module Dalli
     def get_multi_yielder(keys)
       perform do
         return {} if keys.empty?
+
         ring.lock do
           groups = groups_for_keys(keys)
           if (unfound_keys = groups.delete(nil))
@@ -496,6 +504,7 @@ module Dalli
 
           servers = groups.keys
           return if servers.empty?
+
           servers = perform_multi_response_start(servers)
 
           start = Time.now
@@ -510,7 +519,7 @@ module Dalli
             time_left = elapsed > timeout ? 0 : timeout - elapsed
 
             sockets = servers.map(&:sock)
-            readable, _ = IO.select(sockets, nil, nil, time_left)
+            readable, = IO.select(sockets, nil, nil, time_left)
 
             if readable.nil?
               # no response within timeout; abort pending connections
@@ -529,9 +538,7 @@ module Dalli
                     yield key_without_namespace(key), value_list
                   end
 
-                  if server.multi_response_completed?
-                    servers.delete(server)
-                  end
+                  servers.delete(server) if server.multi_response_completed?
                 rescue NetworkError
                   servers.delete(server)
                 end
@@ -541,6 +548,5 @@ module Dalli
         end
       end
     end
-
   end
 end

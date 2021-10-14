@@ -43,6 +43,7 @@ module Dalli
           server = @continuum[entryidx].server
           return server if server.alive?
           break unless @failover
+
           hkey = hash_for("#{try}#{key}")
         end
       else

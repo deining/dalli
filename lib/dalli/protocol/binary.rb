@@ -65,6 +65,7 @@ module Dalli
       def request(op, *args)
         verify_state
         raise Dalli::NetworkError, "#{name} is down: #{@error} #{@msg}. If you are sure it is running, ensure memcached version is > 1.4." unless alive?
+
         begin
           send(op, *args)
         rescue Dalli::MarshalError => ex
@@ -97,6 +98,7 @@ module Dalli
 
       def close
         return unless @sock
+
         begin
           @sock.close
         rescue
@@ -417,21 +419,21 @@ module Dalli
       def serialize(key, value, options = nil)
         marshalled = false
         value = if options && options[:raw]
-          value.to_s
-        else
-          marshalled = true
-          begin
-            serializer.dump(value)
-          rescue Timeout::Error => e
-            raise e
-          rescue => ex
-            # Marshalling can throw several different types of generic Ruby exceptions.
-            # Convert to a specific exception so we can special case it higher up the stack.
-            exc = Dalli::MarshalError.new(ex.message)
-            exc.set_backtrace ex.backtrace
-            raise exc
-          end
-        end
+                  value.to_s
+                else
+                  marshalled = true
+                  begin
+                    serializer.dump(value)
+                  rescue Timeout::Error => e
+                    raise e
+                  rescue => ex
+                    # Marshalling can throw several different types of generic Ruby exceptions.
+                    # Convert to a specific exception so we can special case it higher up the stack.
+                    exc = Dalli::MarshalError.new(ex.message)
+                    exc.set_backtrace ex.backtrace
+                    raise exc
+                  end
+                end
         compressed = false
         set_compress_option = true if options && options[:compress]
         if (@options[:compress] || set_compress_option) && value.bytesize >= @options[:compression_min_size]
@@ -451,12 +453,15 @@ module Dalli
         value
       rescue TypeError
         raise unless /needs to have method `_load'|exception class\/object expected|instance of IO needed|incompatible marshal file format/.match?($!.message)
+
         raise UnmarshalError, "Unable to unmarshal value: #{$!.message}"
       rescue ArgumentError
         raise unless /undefined class|marshal data too short/.match?($!.message)
+
         raise UnmarshalError, "Unable to unmarshal value: #{$!.message}"
       rescue NameError
         raise unless /uninitialized constant/.match?($!.message)
+
         raise UnmarshalError, "Unable to unmarshal value: #{$!.message}"
       rescue Zlib::Error
         raise UnmarshalError, "Unable to uncompress value: #{$!.message}"
@@ -494,8 +499,10 @@ module Dalli
       def sanitize_ttl(ttl)
         ttl_as_i = ttl.to_i
         return ttl_as_i if ttl_as_i <= MAX_ACCEPTABLE_EXPIRATION_INTERVAL
+
         now = Time.now.to_i
         return ttl_as_i if ttl_as_i > now # already a timestamp
+
         Dalli.logger.debug "Expiration interval (#{ttl_as_i}) too long for Memcached, converting to an expiration timestamp"
         now + ttl_as_i
       end
@@ -539,8 +546,9 @@ module Dalli
       def keyvalue_response
         hash = {}
         loop do
-          (key_length, _, body_length, _) = read_header.unpack(KV_HEADER)
+          (key_length, _, body_length,) = read_header.unpack(KV_HEADER)
           return hash if key_length == 0
+
           key = read(key_length)
           value = read(body_length - key_length) if body_length - key_length > 0
           hash[key] = value
@@ -550,8 +558,9 @@ module Dalli
       def multi_response
         hash = {}
         loop do
-          (key_length, _, body_length, _) = read_header.unpack(KV_HEADER)
+          (key_length, _, body_length,) = read_header.unpack(KV_HEADER)
           return hash if key_length == 0
+
           flags = read(4).unpack1("N")
           key = read(key_length)
           value = read(body_length - key_length - 4) if body_length - key_length - 4 > 0
@@ -587,10 +596,10 @@ module Dalli
         begin
           @pid = Process.pid
           @sock = if socket_type == :unix
-            Dalli::Socket::UNIX.open(hostname, self, options)
-          else
-            Dalli::Socket::TCP.open(hostname, port, self, options)
-          end
+                    Dalli::Socket::UNIX.open(hostname, self, options)
+                  else
+                    Dalli::Socket::TCP.open(hostname, port, self, options)
+                  end
           sasl_authentication if need_auth?
           @version = version # trigger actual connect
           up!
@@ -707,8 +716,10 @@ module Dalli
 
         (extras, _type, status, count) = read_header.unpack(NORMAL_HEADER)
         raise Dalli::NetworkError, "Unexpected message format: #{extras} #{count}" unless extras == 0 && count > 0
+
         content = read(count).tr("\u0000", " ")
         return Dalli.logger.debug("Authentication not required/supported by server") if status == 0x81
+
         mechanisms = content.split(" ")
         raise NotImplementedError, "Dalli only supports the PLAIN authentication mechanism" unless mechanisms.include?("PLAIN")
 
@@ -720,10 +731,12 @@ module Dalli
 
         (extras, _type, status, count) = read_header.unpack(NORMAL_HEADER)
         raise Dalli::NetworkError, "Unexpected message format: #{extras} #{count}" unless extras == 0 && count > 0
+
         content = read(count)
         return Dalli.logger.info("Dalli/SASL: #{content}") if status == 0
 
         raise Dalli::DalliError, "Error authenticating: #{status}" unless status == 0x21
+
         raise NotImplementedError, "No two-step authentication mechanisms supported"
         # (step, msg) = sasl.receive('challenge', content)
         # raise Dalli::NetworkError, "Authentication failed" if sasl.failed? || step != 'response'
@@ -732,11 +745,13 @@ module Dalli
       def parse_hostname(str)
         res = str.match(/\A(\[([\h:]+)\]|[^:]+)(?::(\d+))?(?::(\d+))?\z/)
         raise Dalli::DalliError, "Could not parse hostname #{str}" if res.nil? || res[1] == "[]"
+
         hostnam = res[2] || res[1]
         if hostnam.start_with?("/")
           socket_type = :unix
           # in case of unix socket, allow only setting of weight, not port
           raise Dalli::DalliError, "Could not parse hostname #{str}" if res[4]
+
           weigh = res[3]
         else
           socket_type = :tcp

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "./lib/dalli/version"
 
 Gem::Specification.new do |s|
@@ -15,7 +17,7 @@ Gem::Specification.new do |s|
     "Gemfile"
   ]
   s.homepage = "https://github.com/petergoldstein/dalli"
-  s.add_development_dependency "rack"
   s.add_development_dependency "connection_pool"
   s.add_development_dependency "openssl-extensions"
+  s.add_development_dependency "rack"
 end

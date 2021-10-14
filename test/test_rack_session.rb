@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require_relative 'helper'
 
 require 'rack/session/dalli'
@@ -7,7 +8,6 @@ require 'rack/mock'
 require 'thread'
 
 describe Rack::Session::Dalli do
-
   before do
     @port = 19129
     memcached_persistent(@port)
@@ -30,60 +30,60 @@ describe Rack::Session::Dalli do
   end
   let(:drop_session) do
     Rack::Lint.new(proc do |env|
-        env['rack.session.options'][:drop] = true
-        incrementor_proc.call(env)
-      end)
+                     env['rack.session.options'][:drop] = true
+                     incrementor_proc.call(env)
+                   end)
   end
   let(:renew_session) do
     Rack::Lint.new(proc do |env|
-        env['rack.session.options'][:renew] = true
-        incrementor_proc.call(env)
-      end)
+                     env['rack.session.options'][:renew] = true
+                     incrementor_proc.call(env)
+                   end)
   end
   let(:defer_session) do
     Rack::Lint.new(proc do |env|
-        env['rack.session.options'][:defer] = true
-        incrementor_proc.call(env)
-      end)
+                     env['rack.session.options'][:defer] = true
+                     incrementor_proc.call(env)
+                   end)
   end
   let(:skip_session) do
     Rack::Lint.new(proc do |env|
-        env['rack.session.options'][:skip] = true
-        incrementor_proc.call(env)
-      end)
+                     env['rack.session.options'][:skip] = true
+                     incrementor_proc.call(env)
+                   end)
   end
   let(:incrementor) { Rack::Lint.new(incrementor_proc) }
 
   it "faults on no connection" do
     assert_raises Dalli::RingError do
-      rsd = Rack::Session::Dalli.new(incrementor, :memcache_server => 'nosuchserver')
-      rsd.pool.with {|c| c.set('ping', '') }
+      rsd = Rack::Session::Dalli.new(incrementor, memcache_server: 'nosuchserver')
+      rsd.pool.with { |c| c.set('ping', '') }
     end
   end
 
   it "connects to existing server" do
     assert_silent do
-      rsd = Rack::Session::Dalli.new(incrementor, :namespace => 'test:rack:session')
-      rsd.pool.with {|c| c.set('ping', '') }
+      rsd = Rack::Session::Dalli.new(incrementor, namespace: 'test:rack:session')
+      rsd.pool.with { |c| c.set('ping', '') }
     end
   end
 
   it "passes options to MemCache" do
     opts = {
-      :namespace => 'test:rack:session',
-      :compression_min_size => 1234
+      namespace: 'test:rack:session',
+      compression_min_size: 1234
     }
 
     rsd = Rack::Session::Dalli.new(incrementor, opts)
-    assert_equal(opts[:namespace], rsd.pool.with{|c| c.instance_eval { @options[:namespace] }})
-    assert_equal(opts[:compression_min_size], rsd.pool.with{|c| c.instance_eval { @options[:compression_min_size] }})
+    assert_equal(opts[:namespace], rsd.pool.with { |c| c.instance_eval { @options[:namespace] } })
+    assert_equal(opts[:compression_min_size], rsd.pool.with { |c| c.instance_eval { @options[:compression_min_size] } })
   end
 
   it "rejects a :cache option" do
     server = Rack::Session::Dalli::DEFAULT_DALLI_OPTIONS[:memcache_server]
-    cache = Dalli::Client.new(server, :namespace => 'test:rack:session')
+    cache = Dalli::Client.new(server, namespace: 'test:rack:session')
     assert_raises RuntimeError do
-      Rack::Session::Dalli.new(incrementor, :cache => cache, :namespace => 'foobar')
+      Rack::Session::Dalli.new(incrementor, cache: cache, namespace: 'foobar')
     end
   end
 
@@ -94,8 +94,8 @@ describe Rack::Session::Dalli do
 
   it "upgrades to a connection pool" do
     opts = {
-      :namespace => 'test:rack:session',
-      :pool_size => 10
+      namespace: 'test:rack:session',
+      pool_size: 10
     }
 
     with_connectionpool do
@@ -133,7 +133,7 @@ describe Rack::Session::Dalli do
   end
 
   it "determines session from params" do
-    rsd = Rack::Session::Dalli.new(incrementor, :cookie_only => false)
+    rsd = Rack::Session::Dalli.new(incrementor, cookie_only: false)
     req = Rack::MockRequest.new(rsd)
     res = req.get("/")
     sid = res["Set-Cookie"][session_match, 1]
@@ -145,7 +145,7 @@ describe Rack::Session::Dalli do
     bad_cookie = "rack.session=blarghfasel"
     rsd = Rack::Session::Dalli.new(incrementor)
     res = Rack::MockRequest.new(rsd).
-      get("/", "HTTP_COOKIE" => bad_cookie)
+          get("/", "HTTP_COOKIE" => bad_cookie)
     assert_equal '{"counter"=>1}', res.body
     cookie = res["Set-Cookie"][session_match]
     refute_match(/#{bad_cookie}/, cookie)
@@ -155,13 +155,13 @@ describe Rack::Session::Dalli do
     bad_cookie = "rack.session="
     rsd = Rack::Session::Dalli.new(incrementor)
     res = Rack::MockRequest.new(rsd).
-      get("/", "HTTP_COOKIE" => bad_cookie)
+          get("/", "HTTP_COOKIE" => bad_cookie)
     cookie = res["Set-Cookie"][session_match]
     refute_match(/#{bad_cookie}$/, cookie)
   end
 
   it "sets an expiration on new sessions" do
-    rsd = Rack::Session::Dalli.new(incrementor, :expire_after => 3)
+    rsd = Rack::Session::Dalli.new(incrementor, expire_after: 3)
     res = Rack::MockRequest.new(rsd).get('/')
     assert res.body.include?('"counter"=>1')
     cookie = res["Set-Cookie"]
@@ -173,7 +173,7 @@ describe Rack::Session::Dalli do
   end
 
   it "maintains freshness of existing sessions" do
-    rsd = Rack::Session::Dalli.new(incrementor, :expire_after => 3)
+    rsd = Rack::Session::Dalli.new(incrementor, expire_after: 3)
     res = Rack::MockRequest.new(rsd).get('/')
     assert res.body.include?('"counter"=>1')
     cookie = res["Set-Cookie"]
@@ -287,8 +287,8 @@ describe Rack::Session::Dalli do
     hash_check = proc do |env|
       session = env['rack.session']
       unless session.include? 'test'
-        session.update :a => :b, :c => { :d => :e },
-          :f => { :g => { :h => :i} }, 'test' => true
+        session.update :a => :b, :c => { d: :e },
+                       :f => { g: { h: :i } }, 'test' => true
       else
         session[:f][:g][:h] = :j
       end
@@ -299,12 +299,11 @@ describe Rack::Session::Dalli do
 
     res0 = req.get("/")
     session_id = (cookie = res0["Set-Cookie"])[session_match, 1]
-    ses0 = rsd.pool.with {|c| c.get(session_id, true) }
+    ses0 = rsd.pool.with { |c| c.get(session_id, true) }
 
     req.get("/", "HTTP_COOKIE" => cookie)
-    ses1 = rsd.pool.with {|c| c.get(session_id, true) }
+    ses1 = rsd.pool.with { |c| c.get(session_id, true) }
 
     refute_equal ses0, ses1
   end
-
 end

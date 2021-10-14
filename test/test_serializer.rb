@@ -19,8 +19,8 @@ describe "Serializer" do
         assert_equal JSON, memcache.instance_variable_get("@ring").servers.first.serializer
 
         memcached(21956) do |newdc|
-          assert newdc.set("json_test", {"foo" => "bar"})
-          assert_equal({"foo" => "bar"}, newdc.get("json_test"))
+          assert newdc.set("json_test", { "foo" => "bar" })
+          assert_equal({ "foo" => "bar" }, newdc.get("json_test"))
         end
       end
     end

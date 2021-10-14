@@ -4,7 +4,6 @@ require 'ruby-prof'
 require_relative "helper"
 require "benchmark"
 
-
 def profile(&block)
   return yield unless ENV["PROFILE"]
 

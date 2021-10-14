@@ -8,7 +8,7 @@ describe "Dalli::Cas::Client" do
       memcached_persistent do |dc|
         dc.flush
 
-        expected = {"blah" => "blerg!"}
+        expected = { "blah" => "blerg!" }
         get_block_called = false
         stored_value = stored_cas = nil
         # Validate call-with-block
@@ -34,7 +34,7 @@ describe "Dalli::Cas::Client" do
         dc.close
         dc.flush
 
-        expected_hash = {"a" => "foo", "b" => 123}
+        expected_hash = { "a" => "foo", "b" => 123 }
         expected_hash.each_pair do |k, v|
           dc.set(k, v)
         end
@@ -81,7 +81,7 @@ describe "Dalli::Cas::Client" do
       memcached_persistent do |dc|
         dc.flush
 
-        expected = {"blah" => "blerg!"}
+        expected = { "blah" => "blerg!" }
         dc.set("some_key", expected)
 
         value, cas = dc.get_cas("some_key")
@@ -89,12 +89,12 @@ describe "Dalli::Cas::Client" do
         assert(!cas.nil? && cas != 0)
 
         # Set operation, first with wrong then with correct CAS
-        expected = {"blah" => "set succeeded"}
+        expected = { "blah" => "set succeeded" }
         assert(dc.set_cas("some_key", expected, cas + 1) == false)
         assert op_addset_succeeds(cas = dc.set_cas("some_key", expected, cas))
 
         # Replace operation, first with wrong then with correct CAS
-        expected = {"blah" => "replace succeeded"}
+        expected = { "blah" => "replace succeeded" }
         assert(dc.replace_cas("some_key", expected, cas + 1) == false)
         assert op_addset_succeeds(cas = dc.replace_cas("some_key", expected, cas))
 

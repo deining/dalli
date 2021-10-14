@@ -199,6 +199,7 @@ class Bencher
       end
     end
   end
+
   def start_and_flush_with_retry(port, args = "", client_options = {})
     dc = nil
     retry_count = 0
@@ -217,11 +218,11 @@ class Bencher
   def start_and_flush(port, args = "", client_options = {}, flush = true)
     memcached_server(port, args)
     dc = if port.to_i == 0
-      # unix socket
-      Dalli::Client.new(port, client_options)
-    else
-      Dalli::Client.new(["localhost:#{port}", "127.0.0.1:#{port}"], client_options)
-    end
+           # unix socket
+           Dalli::Client.new(port, client_options)
+         else
+           Dalli::Client.new(["localhost:#{port}", "127.0.0.1:#{port}"], client_options)
+         end
     dc.flush_all if flush
     dc
   end
@@ -257,21 +258,15 @@ class Bencher
 
   def find_memcached
     output = `memcached -h | head -1`.strip
-    if output && output =~ /^memcached (\d.\d.\d+)/ && $1 > "1.4"
-      return (puts "Found #{output} in PATH"; "")
-    end
+    return (puts "Found #{output} in PATH"; "") if output && output =~ /^memcached (\d.\d.\d+)/ && $1 > "1.4"
+
     PATHS.each do |path|
       output = `memcached -h | head -1`.strip
-      if output && output =~ /^memcached (\d\.\d\.\d+)/ && $1 > "1.4"
-        return (puts "Found #{output} in #{path}"; path)
-      end
+      return (puts "Found #{output} in #{path}"; path) if output && output =~ /^memcached (\d\.\d\.\d+)/ && $1 > "1.4"
     end
 
     raise Errno::ENOENT, "Unable to find memcached 1.4+ locally"
   end
-
-
-
 end
 
 module Memcached

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'rack/session/abstract/id'
 require 'dalli'
 require 'connection_pool'
@@ -9,8 +10,8 @@ module Rack
       attr_reader :pool
 
       DEFAULT_DALLI_OPTIONS = {
-        :namespace => 'rack:session',
-        :memcache_server => 'localhost:11211'
+        namespace: 'rack:session',
+        memcache_server: 'localhost:11211'
       }
 
       # Brings in a new Rack::Session::Dalli middleware with the given
@@ -67,7 +68,7 @@ module Rack
       # for more information about it and its default options (which would only
       # be applicable if you supplied one of the two options, but not both).
       #
-      def initialize(app, options={})
+      def initialize(app, options = {})
         # Parent uses DEFAULT_OPTIONS to build @default_options for Rack::Session
         super
 
@@ -129,7 +130,7 @@ module Rack
         popts = {}
         # Filter out Rack::Session-specific options and apply our defaults
         mopts = DEFAULT_DALLI_OPTIONS.merge \
-          options.reject {|k, _| DEFAULT_OPTIONS.key? k }
+          options.reject { |k, _| DEFAULT_OPTIONS.key? k }
         mserv = mopts.delete :memcache_server
 
         if mopts[:pool_size] || mopts[:pool_timeout]
@@ -148,10 +149,11 @@ module Rack
         end
       end
 
-      def with_block(default=nil, &block)
+      def with_block(default = nil, &block)
         @pool.with(&block)
       rescue ::Dalli::DalliError, Errno::ECONNREFUSED
         raise if $!.message =~ /undefined class/
+
         if $VERBOSE
           warn "#{self} is unable to find memcached server."
           warn $!.inspect

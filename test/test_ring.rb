@@ -3,7 +3,6 @@
 require_relative "helper"
 
 describe "Ring" do
-
   describe "a ring of servers" do
     Server = Struct.new(:name, :weight)
     it "have the continuum sorted by value" do

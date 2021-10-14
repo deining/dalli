@@ -39,7 +39,7 @@ end
 
 describe "GzipCompressor" do
   it "compress and uncompress data using Zlib::GzipWriter/Reader" do
-    memcached(19127, nil, {compress: true, compressor: Dalli::GzipCompressor}) do |dc|
+    memcached(19127, nil, { compress: true, compressor: Dalli::GzipCompressor }) do |dc|
       data = (0...1025).map { rand(65..90).chr }.join
       assert dc.set("test", data)
       assert_equal Dalli::GzipCompressor, dc.instance_variable_get("@ring").servers.first.compressor

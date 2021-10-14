@@ -19,10 +19,10 @@ describe "Dalli" do
     end
 
     it "raises error with invalid expires_in" do
-      bad_data = [{bad: "expires in data"}, Hash, [1, 2, 3]]
+      bad_data = [{ bad: "expires in data" }, Hash, [1, 2, 3]]
       bad_data.each do |bad|
         assert_raises ArgumentError do
-          Dalli::Client.new("foo", {expires_in: bad})
+          Dalli::Client.new("foo", { expires_in: bad })
         end
       end
     end
@@ -39,7 +39,7 @@ describe "Dalli" do
 
     it "raises error with invalid digest_class" do
       assert_raises ArgumentError do
-        Dalli::Client.new("foo", {expires_in: 10, digest_class: Object})
+        Dalli::Client.new("foo", { expires_in: 10, digest_class: Object })
       end
     end
 
@@ -146,7 +146,7 @@ describe "Dalli" do
 
   it "raises error when servers is a Hash" do
     assert_raises ArgumentError do
-      Dalli::Client.new({hosts: "server1.example.com"})
+      Dalli::Client.new({ hosts: "server1.example.com" })
     end
   end
 
@@ -233,7 +233,7 @@ describe "Dalli" do
       memcached_persistent do |dc|
         dc.flush
 
-        expected = {"blah" => "blerg!"}
+        expected = { "blah" => "blerg!" }
         executed = false
         value = dc.fetch("fetch_key") {
           executed = true
@@ -288,14 +288,14 @@ describe "Dalli" do
       memcached_persistent do |dc|
         dc.flush
 
-        expected = {"blah" => "blerg!"}
+        expected = { "blah" => "blerg!" }
 
         resp = dc.cas("cas_key") { |value|
           fail("Value it not exist")
         }
         assert_nil resp
 
-        mutated = {"blah" => "foo!"}
+        mutated = { "blah" => "foo!" }
         dc.set("cas_key", expected)
         resp = dc.cas("cas_key") { |value|
           assert_equal expected, value
@@ -312,7 +312,7 @@ describe "Dalli" do
       memcached_persistent do |dc|
         dc.flush
 
-        mutated = {"blah" => "foo!"}
+        mutated = { "blah" => "foo!" }
         resp = dc.cas!("cas_key") { |value|
           assert_nil value
           mutated
@@ -336,7 +336,7 @@ describe "Dalli" do
         dc.set("c", %w[a b c])
         # Invocation without block
         resp = dc.get_multi(%w[a b c d e f])
-        expected_resp = {"a" => "foo", "b" => 123, "c" => %w[a b c]}
+        expected_resp = { "a" => "foo", "b" => 123, "c" => %w[a b c] }
         assert_equal(expected_resp, resp)
 
         # Invocation with block
@@ -649,7 +649,7 @@ describe "Dalli" do
               }
               refute_nil res
               assert_equal false, cache.add("a", 11)
-              assert_equal({"a" => 9, "b" => 11}, cache.get_multi(["a", "b"]))
+              assert_equal({ "a" => 9, "b" => 11 }, cache.get_multi(["a", "b"]))
               inc = cache.incr("cat", 10)
               assert_equal 0, inc % 5
               cache.decr("cat", 5)
@@ -698,7 +698,7 @@ describe "Dalli" do
         dc = Dalli::Client.new("localhost:#{port}", namespace: "a")
         dc.set("a", 1)
         dc.set("b", 2)
-        assert_equal({"a" => 1, "b" => 2}, dc.get_multi("a", "b"))
+        assert_equal({ "a" => 1, "b" => 2 }, dc.get_multi("a", "b"))
       end
     end
 
@@ -708,7 +708,7 @@ describe "Dalli" do
         dc = Dalli::Client.new("localhost:#{port}", namespace: "(?!)")
         dc.set("a", 1)
         dc.set("b", 2)
-        assert_equal({"a" => 1, "b" => 2}, dc.get_multi("a", "b"))
+        assert_equal({ "a" => 1, "b" => 2 }, dc.get_multi("a", "b"))
       end
     end
 

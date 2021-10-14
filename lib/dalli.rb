@@ -14,14 +14,19 @@ module Dalli
 
   # generic error
   class DalliError < RuntimeError; end
+
   # socket/server communication error
   class NetworkError < DalliError; end
+
   # no server available/alive error
   class RingError < DalliError; end
+
   # application error in marshalling serialization
   class MarshalError < DalliError; end
+
   # application error in marshalling deserialization or decompression
   class UnmarshalError < DalliError; end
+
   # payload too big for memcached
   class ValueOverMaxSize < DalliError; end
 
